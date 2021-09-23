@@ -32,58 +32,58 @@ class MGSetupPlugin(
     octoprint.plugin.EventHandlerPlugin,
 ):
     def __init__(self):
-        self.oldZOffset = 0
-        self.firstTab = True
-        self.firstRunComplete = False
-        self.hideDebug = False
-        self.firstTabName = "plugin_mgsetup"
+        self.old_z_offset = 0
+        self.first_tab = True
+        self.first_run_complete = False
+        self.hide_debug = False
+        self.first_tab_name = "plugin_mgsetup"
         self.newhost = socket.gethostname()
         self.serial = -1
         self.registered = False
         self.activated = False
-        self.actApiKey = 0
-        self.actServer = "http://whatever.what"
-        self.nextReminder = -1
-        self.internetConnection = False
+        self.act_api_key = 0
+        self.act_server = "http://whatever.what"
+        self.next_reminder = -1
+        self.internet_connection = False
         self.tooloffsetline = ""
         self.zoffsetline = ""
-        self.pluginVersion = ""
+        self.plugin_version = ""
         self.ip = ""
         self.firmwareline = ""
         self.localfirmwareline = ""
         self.probeline = ""
-        self.probeOffsetLine = ""
-        self.printActive = False
-        self.mgLogger = logging.getLogger("mgLumberJack")
-        self.mgLogger.setLevel(logging.DEBUG)
-        self.mgLoggerFirstRun = logging.getLogger("mgFirstRun")
-        self.mgLoggerFirstRun.setLevel(5)
-        self.mgLoggerPermanent = logging.getLogger("mgPermanent")
-        self.mgLoggerPermanent.setLevel(5)
-        self.mgLogger.info("right after init test!?")
-        self.printerValueVersion = 0
-        self.printerValueGood = False
-        self.currentProjectName = ""
-        self.currentProjectPrintSuccessTime = 0
-        self.currentProjectPrintFailTime = 0
-        self.currentProjectMachineFailTime = 0
-        self.totalPrintSuccessTime = 0
-        self.totalPrintFailTime = 0
-        self.totalMachineFailTime = 0
-        self.currentProjectPrintSuccessTimeFriendly = ""
-        self.currentProjectPrintFailTimeFriendly = ""
-        self.currentProjectMachineFailTimeFriendly = ""
-        self.totalPrintSuccessTimeFriendly = ""
-        self.totalPrintFailTimeFriendly = ""
-        self.totalMachineFailTimeFriendly = ""
+        self.probe_offset_line = ""
+        self.print_active = False
+        self.mg_logger = logging.getLogger("mgLumberJack")
+        self.mg_logger.setLevel(logging.DEBUG)
+        self.mg_logger_first_run = logging.getLogger("mgFirstRun")
+        self.mg_logger_first_run.setLevel(5)
+        self.mg_logger_permanent = logging.getLogger("mgPermanent")
+        self.mg_logger_permanent.setLevel(5)
+        self.mg_logger.info("right after init test!?")
+        self.printer_value_version = 0
+        self.printer_value_good = False
+        self.current_project_name = ""
+        self.current_project_print_success_time = 0
+        self.current_project_print_fail_time = 0
+        self.current_project_machine_fail_time = 0
+        self.total_print_success_time = 0
+        self.total_print_fail_time = 0
+        self.total_machine_fail_time = 0
+        self.current_project_print_success_time_friendly = ""
+        self.current_project_print_fail_time_friendly = ""
+        self.current_project_machine_fail_time_friendly = ""
+        self.total_print_success_time_friendly = ""
+        self.total_print_fail_time_friendly = ""
+        self.total_machine_fail_time_friendly = ""
         # TODO - this is ugly, should probably combine all of these into a dict, but...works for now.
         self.printing = False
-        self.currentPrintStartTime = 0
-        self.currentPrintElapsedTime = 0
-        self.printElapsedTimer = octoprint.util.RepeatedTimer(
-            12, self.updateElapsedTime
+        self.current_print_start_time = 0
+        self.current_print_elapsed_time = 0
+        self.print_elapsed_timer = octoprint.util.RepeatedTimer(
+            12, self.update_elapsed_time
         )
-        self.updateElapsedTimer = False
+        self.update_elapsed_timer = False
         self.smbpatchstring = ""
 
     def create_loggers(self):
@@ -91,53 +91,53 @@ class MGSetupPlugin(
             "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         )
         handler = logging.handlers.TimedRotatingFileHandler(
-            self._basefolder + "/logs/mgsetup.log", when="d", interval=3, backupCount=10
+            self._basefolder + "/logs/mgsetup.log", when="d", interval=3, backup_count=10
         )
-        firstRunHandler = logging.handlers.RotatingFileHandler(
+        first_run_handler = logging.handlers.RotatingFileHandler(
             self._basefolder + "/logs/mgsetupFirstRun.log",
-            maxBytes=100000000,
-            backupCount=20,
+            max_bytes=100000000,
+            backup_count=20,
         )
-        # firstRunHandler.setLevel(5)
-        permanentHandler = logging.handlers.RotatingFileHandler(
+        # first_run_handler.setLevel(5)
+        permanent_handler = logging.handlers.RotatingFileHandler(
             self._basefolder + "/logs/mgsetupPermanent.log",
-            maxBytes=100000000,
-            backupCount=20,
+            max_bytes=100000000,
+            backup_count=20,
         )
-        # permanentHandler.setLevel(5)
+        # permanent_handler.setLevel(5)
         handler.setFormatter(formatter)
-        firstRunHandler.setFormatter(formatter)
-        permanentHandler.setFormatter(formatter)
-        self.mgLogger.addHandler(handler)
-        # self.mgLogger.addHandler(firstRunHandler)
-        # self.mgLogger.addHandler(permanentHandler)
-        self.mgLoggerPermanent.addHandler(permanentHandler)
-        self.mgLoggerFirstRun.addHandler(firstRunHandler)
+        first_run_handler.setFormatter(formatter)
+        permanent_handler.setFormatter(formatter)
+        self.mg_logger.addHandler(handler)
+        # self.mg_logger.addHandler(first_run_handler)
+        # self.mg_logger.addHandler(permanent_handler)
+        self.mg_logger_permanent.addHandler(permanent_handler)
+        self.mg_logger_first_run.addHandler(first_run_handler)
 
-        # self.mgLogger.info("on_after_startup mgLogger test!")
-        self.mgLog("general test", 0)
+        # self.mg_logger.info("on_after_startup mgLogger test!")
+        self.mg_log("general test", 0)
         # self.mgLog("permanent test",2)
         # self.mgLog("firstrun test",3)
         # self.mgLog("permanent and first run test",4)
 
-    def mgLog(self, message, level=2):
+    def mg_log(self, message, level=2):
         self._logger.info(message)
-        self.mgLogger.info(message)
+        self.mg_logger.info(message)
         if level == 2:
-            self.mgLoggerPermanent.info(message)
-            self.mgLogger.info("Also logged to PERMANENT")
+            self.mg_logger_permanent.info(message)
+            self.mg_logger.info("Also logged to PERMANENT")
         if level == 3:
-            self.mgLoggerFirstRun.info(message)
-            self.mgLogger.info("Also logged to FIRST RUN")
+            self.mg_logger_first_run.info(message)
+            self.mg_logger.info("Also logged to FIRST RUN")
         if level == 4:
-            self.mgLoggerPermanent.info(message)
-            self.mgLoggerFirstRun.info(message)
-            self.mgLogger.info("Also logged to PERMANENT and FIRST RUN")
+            self.mg_logger_permanent.info(message)
+            self.mg_logger_first_run.info(message)
+            self.mg_logger.info("Also logged to PERMANENT and FIRST RUN")
 
-            # Defined as an API target as well, so we can target it from octoprint client - [wherever]/octoprint client post_json '/api/plugin/mgsetup' '{"command":"mgLog","stringToLog":"[whateverYouWantToLog]","priority":"[priorityLevel]"}
+            # Defined as an API target as well, so we can target it from octoprint client - [wherever]/octoprint client post_json '/api/plugin/mgsetup' '{"command":"mg_log","stringToLog":"[whateverYouWantToLog]","priority":"[priorityLevel]"}
 
     def on_settings_initialized(self):
-        self.mgLogger.info("First mgLogger test!?")
+        self.mg_logger.info("First mgLogger test!?")
         self._logger.info("MGSetup on_settings_initialized triggered.")
         # octoprint.settings.Settings.add_overlay(octoprint.settings.settings(), dict(controls=dict(children=dict(name="Medium Quality"), dict(commands=["M201 X900 Y900", "M205 X20 Y20", "M220 S50"]))))
         # octoprint.settings.Settings.set(octoprint.settings.settings(), ["controls", "children", "name"],["Fan Orn"])
@@ -149,9 +149,9 @@ class MGSetupPlugin(
         octoprint.settings.Settings.get(
             octoprint.settings.settings(), ["appearance", "components", "order", "tab"]
         )
-        self.firstTab = self._settings.get(["firstTab"])
-        if self.firstTab:
-            self.firstTabName = "plugin_mgsetup"
+        self.first_tab = self._settings.get(["firstTab"])
+        if self.first_tab:
+            self.first_tab_name = "plugin_mgsetup"
             # octoprint.settings.Settings.set(octoprint.settings.settings(),["appearance", "components", "order", "tab"],["plugin_mgsetup", "temperature", "control", "gcodeviewer", "terminal", "timelapse"],force=True)
             octoprint.settings.Settings.add_overlay(
                 octoprint.settings.settings(),
@@ -173,7 +173,7 @@ class MGSetupPlugin(
                 ),
             )
         else:
-            self.firstTabName = "temperature"
+            self.first_tab_name = "temperature"
             # octoprint.settings.Settings.set(octoprint.settings.settings(),["appearance", "components", "order", "tab"],["temperature", "control", "gcodeviewer", "terminal", "plugin_mgsetup", "timelapse"],force=True)
             octoprint.settings.Settings.add_overlay(
                 octoprint.settings.settings(),
@@ -194,8 +194,8 @@ class MGSetupPlugin(
                     )
                 ),
             )
-        self.firstRunComplete = self._settings.get(["firstRunComplete"])
-        self.hideDebug = self._settings.get(["hideDebug"])
+        self.first_run_complete = self._settings.get(["firstRunComplete"])
+        self.hide_debug = self._settings.get(["hideDebug"])
         if self._settings.get(["serialNumber"]) != -1:
             self.serial = self._settings.get(["serialNumber"])
             self._logger.info("Retrieved serialNumber from Settings.")
@@ -210,25 +210,25 @@ class MGSetupPlugin(
         self._logger.info(self.serial)
         self.registered = self._settings.get(["registered"])
         self.activated = self._settings.get(["activated"])
-        self.nextReminder = self._settings.get(["nextReminder"])
-        self.pluginVersion = self._settings.get(["pluginVersion"])
-        self.currentProjectPrintSuccessTime = self._settings.get(
+        self.next_reminder = self._settings.get(["nextReminder"])
+        self.plugin_version = self._settings.get(["pluginVersion"])
+        self.current_project_print_success_time = self._settings.get(
             ["currentProjectPrintSuccessTime"]
         )
-        self.currentProjectName = self._settings.get(["currentProjectName"])
-        self.totalPrintSuccessTime = self._settings.get(["totalPrintSuccessTime"])
-        self.currentProjectPrintFailTime = self._settings.get(
+        self.current_project_name = self._settings.get(["currentProjectName"])
+        self.total_print_success_time = self._settings.get(["totalPrintSuccessTime"])
+        self.current_project_print_fail_time = self._settings.get(
             ["currentProjectPrintFailTime"]
         )
-        self.currentProjectMachineFailTime = self._settings.get(
+        self.current_project_machine_fail_time = self._settings.get(
             ["currentProjectMachineFailTime"]
         )
-        self.totalPrintFailTime = self._settings.get(["totalPrintFailTime"])
-        self.totalMachineFailTime = self._settings.get(["totalMachineFailTime"])
+        self.total_print_fail_time = self._settings.get(["totalPrintFailTime"])
+        self.total_machine_fail_time = self._settings.get(["totalMachineFailTime"])
 
-        # 		octoprint.settings.Settings.set(dict(appearance=dict(components=dict(order=dict(tab=[MGSetupPlugin().firstTabName, "temperature", "control", "gcodeviewer", "terminal", "timelapse"])))))
+        # 		octoprint.settings.Settings.set(dict(appearance=dict(components=dict(order=dict(tab=[MGSetupPlugin().first_tab_name, "temperature", "control", "gcodeviewer", "terminal", "timelapse"])))))
         # 		octoprint.settings.Settings.set(dict(appearance=dict(name=["MakerGear "+self.newhost])))
-        # __plugin_settings_overlay__ = dict(appearance=dict(components=dict(order=dict(tab=[MGSetupPlugin().firstTabName]))))
+        # __plugin_settings_overlay__ = dict(appearance=dict(components=dict(order=dict(tab=[MGSetupPlugin().first_tab_name]))))
         if self._settings.get(["prefixDisplayName"]):
             octoprint.settings.Settings.set(
                 octoprint.settings.settings(),
@@ -239,15 +239,15 @@ class MGSetupPlugin(
             octoprint.settings.Settings.set(
                 octoprint.settings.settings(), ["appearance", "name"], [self.newhost]
             )
-        self.activeProfile = octoprint.settings.Settings.get(
+        self.active_profile = octoprint.settings.Settings.get(
             octoprint.settings.settings(), ["printerProfiles", "default"]
         )
-        self._logger.info(self.activeProfile)
+        self._logger.info(self.active_profile)
         self._logger.info(
             "extruders: "
             + str(
                 (
-                    self._printer_profile_manager.get_all()[self.activeProfile][
+                    self._printer_profile_manager.get_all()[self.active_profile][
                         "extruder"
                     ]["count"]
                 )
@@ -258,7 +258,7 @@ class MGSetupPlugin(
         )
         self._logger.info("Hello")
 
-    def checkInternet(self, timeout, iterations, url):
+    def check_internet(self, timeout, iterations, url):
         self._logger.info("MGSetup checkInternet triggered.")
         if url == "none":
             url = "http://google.com"
@@ -279,9 +279,9 @@ class MGSetupPlugin(
             try:
                 response = urllib.request.urlopen(url, timeout=timeout)
                 self._logger.info("Check Internet Passed.  URL: " + str(url))
-                self.internetConnection = True
+                self.internet_connection = True
                 self._plugin_manager.send_plugin_message(
-                    "mgsetup", dict(internetConnection=self.internetConnection)
+                    "mgsetup", dict(internetConnection=self.internet_connection)
                 )
                 return True
             except urllib.error.URLError as err:
@@ -297,9 +297,9 @@ class MGSetupPlugin(
                     + " .  Looking for URL: "
                     + str(url)
                 )
-                self.internetConnection = False
+                self.internet_connection = False
                 self._plugin_manager.send_plugin_message(
-                    "mgsetup", dict(internetConnection=self.internetConnection)
+                    "mgsetup", dict(internetConnection=self.internet_connection)
                 )
                 return False
 
@@ -310,7 +310,7 @@ class MGSetupPlugin(
         # self._logger.info("extruders: "+str(self._settings.get(["printerProfiles","currentProfileData","extruder.count"])))
         self.current_position = "empty for now"
         self._logger.info(self.newhost)
-        self.checkInternet(3, 3, "none")
+        self.check_internet(3, 3, "none")
         # self._logger.info(self._printer_profile_manager.get_all())
         # self._logger.info(self._printer_profile_manager.get_current())
         self._logger.info(
@@ -436,65 +436,65 @@ class MGSetupPlugin(
             self._logger.info(e)
         except:
             raise
-        self.getLocalFirmwareVersion()
-        self.adminAction(dict(action="sshState"))
+        self.get_local_firmware_version()
+        self.admin_action(dict(action="sshState"))
         if self._settings.get(["printing"]):
-            self.mgLog(
+            self.mg_log(
                 "It looks like the machine crashed while printing - updating machineFail times and reseting.",
                 2,
             )
-            self.currentProjectMachineFailTime = self.currentProjectMachineFailTime + (
-                self.currentPrintElapsedTime - self.currentPrintStartTime
+            self.current_project_machine_fail_time = self.current_project_machine_fail_time + (
+                self.current_print_elapsed_time - self.current_print_start_time
             )
-            self.totalMachineFailTime = self.totalMachineFailTime + (
-                self.currentPrintElapsedTime - self.currentPrintStartTime
+            self.total_machine_fail_time = self.total_machine_fail_time + (
+                self.current_print_elapsed_time - self.current_print_start_time
             )
             self.printing = False
-            self.currentPrintStartTime = 0
-            self.currentPrintElapsedTime = 0
+            self.current_print_start_time = 0
+            self.current_print_elapsed_time = 0
             self._settings.set(
-                ["currentProjectMachineFailTime"], self.currentProjectMachineFailTime
+                ["currentProjectMachineFailTime"], self.current_project_machine_fail_time
             )
             self._settings.set(
                 ["currentProjectMachineFailTimeFriendly"],
                 str(
-                    datetime.timedelta(seconds=int(self.currentProjectMachineFailTime))
+                    datetime.timedelta(seconds=int(self.current_project_machine_fail_time))
                 ),
             )
 
-            self._settings.set(["totalMachineFailTime"], self.totalMachineFailTime)
+            self._settings.set(["totalMachineFailTime"], self.total_machine_fail_time)
             self._settings.set(
                 ["totalMachineFailTimeFriendly"],
-                str(datetime.timedelta(seconds=int(self.totalMachineFailTime))),
+                str(datetime.timedelta(seconds=int(self.total_machine_fail_time))),
             )
 
             self._settings.set(["printing"], self.printing)
-            self._settings.set(["currentPrintStartTime"], self.currentPrintStartTime)
+            self._settings.set(["currentPrintStartTime"], self.current_print_start_time)
             self._settings.set(
-                ["currentPrintElapsedTime"], self.currentPrintElapsedTime
+                ["currentPrintElapsedTime"], self.current_print_elapsed_time
             )
             self._settings.save()
-            self.printElapsedTimer.start()
+            self.print_elapsed_timer.start()
 
         # if
         try:
-            smbHashVal = hashlib.md5(
+            smb_hash_val = hashlib.md5(
                 open("/etc/samba/smb.conf").read()
             ).hexdigest()  # != "03dc1620b398cbe3d2d82e83c20c1905":
-            if smbHashVal == "44c057b0ffc7ab0f88c1923bdd32b559":
+            if smb_hash_val == "44c057b0ffc7ab0f88c1923bdd32b559":
                 self.smbpatchstring = "Patch Already In Place"
-                self.mgLog("smb.conf hash matches patched file, no need to patch", 2)
-            elif smbHashVal == "95b44915e267400669b2724e0cce5967":
+                self.mg_log("smb.conf hash matches patched file, no need to patch", 2)
+            elif smb_hash_val == "95b44915e267400669b2724e0cce5967":
                 self.smbpatchstring = "Patch was required: smb.conf has been patched"
-                self.mgLog("smb.conf hash matches unpatched file, now patching file", 2)
-                # self.mgLog("smb.conf actual hash: "+str(smbHashVal))
-                self.patchSmb()
+                self.mg_log("smb.conf hash matches unpatched file, now patching file", 2)
+                # self.mg_log("smb.conf actual hash: "+str(smb_hash_val))
+                self.patch_smb()
 
             else:
                 self.smbpatchstring = (
                     "Custom smb.conf file present: patch status unknown"
                 )
-                self.mgLog(
+                self.mg_log(
                     "Custom smb.conf file present: patch status unknown. No Action", 2
                 )
         except Exception as e:
@@ -566,16 +566,16 @@ class MGSetupPlugin(
             videojs=["video-js/*"],
         )
 
-    def remindLater(self):
+    def remind_later(self):
         self._logger.info("MGSetup remindLater triggered.")
-        self.nextReminder = time.mktime(time.gmtime()) + 604800
+        self.next_reminder = time.mktime(time.gmtime()) + 604800
         self._logger.info(
             "Next Reminder: "
-            + str(self.nextReminder)
+            + str(self.next_reminder)
             + ", currently: "
             + str(time.mktime(time.gmtime()))
         )
-        self._settings.set(["nextReminder"], self.nextReminder)
+        self._settings.set(["nextReminder"], self.next_reminder)
         self._settings.save()
 
     def on_event(self, event, payload):
@@ -590,7 +590,7 @@ class MGSetupPlugin(
         if event == Events.CLIENT_OPENED:
             # self._logger.info(payload + " connected")
             # self.serial = ""
-            self.sendCurrentValues()
+            self.send_current_values()
             self._logger.info(self._printer_profile_manager.get_current_or_default())
             # self._plugin_manager.send_plugin_message("mgsetup", dict(zoffsetline = self.zoffsetline))
             # self._plugin_manager.send_plugin_message("mgsetup", dict(tooloffsetline = self.tooloffsetline))
@@ -606,16 +606,16 @@ class MGSetupPlugin(
             )
 
             # self._plugin_manager.send_plugin_message("mgsetup", dict(firmwareline = self.firmwareline))
-            # self._plugin_manager.send_plugin_message("mgsetup", dict(probeOffsetLine = self.probeOffsetLine))
-            self._logger.info(str(self.nextReminder))
-            # if (self.internetConnection == False ):
-            self.checkInternet(3, 5, "none")
+            # self._plugin_manager.send_plugin_message("mgsetup", dict(probeOffsetLine = self.probe_offset_line))
+            self._logger.info(str(self.next_reminder))
+            # if (self.internet_connection == False ):
+            self.check_internet(3, 5, "none")
             # else:
-            # 	self._plugin_manager.send_plugin_message("mgsetup", dict(internetConnection = self.internetConnection))
+            # 	self._plugin_manager.send_plugin_message("mgsetup", dict(internetConnection = self.internet_connection))
 
             if (self.activated == False) or (self.registered == False):
-                if (self.nextReminder <= time.mktime(time.gmtime())) and (
-                    self.nextReminder > 0
+                if (self.next_reminder <= time.mktime(time.gmtime())) and (
+                    self.next_reminder > 0
                 ):
                     self._logger.info("nextReminder is in the past and not 0")
                     self._plugin_manager.send_plugin_message(
@@ -623,24 +623,24 @@ class MGSetupPlugin(
                     )
                 else:
                     self._logger.info("nextReminder in the future or 0")
-                    self._logger.info(str(self.nextReminder))
+                    self._logger.info(str(self.next_reminder))
                     self._logger.info(str(time.mktime(time.gmtime())))
                 return
 
         if event == Events.PRINT_STARTED:
-            self.printActive = True
+            self.print_active = True
             self.printing = True
-            self.currentPrintStartTime = time.mktime(time.gmtime())
-            self.currentPrintElapsedTime = self.currentPrintStartTime
+            self.current_print_start_time = time.mktime(time.gmtime())
+            self.current_print_elapsed_time = self.current_print_start_time
             self._settings.set(["printing"], self.printing)
-            self._settings.set(["currentPrintStartTime"], self.currentPrintStartTime)
+            self._settings.set(["currentPrintStartTime"], self.current_print_start_time)
             self._settings.set(
-                ["currentPrintElapsedTime"], self.currentPrintElapsedTime
+                ["currentPrintElapsedTime"], self.current_print_elapsed_time
             )
             self._settings.save()
             self._logger.info("Current print start time:")
-            self._logger.info(self.currentPrintStartTime)
-            self.updateElapsedTimer = True
+            self._logger.info(self.current_print_start_time)
+            self.update_elapsed_timer = True
 
         if (
             (event == Events.PRINT_FAILED)
@@ -649,109 +649,109 @@ class MGSetupPlugin(
             or (event == Events.CONNECTED)
             or (event == Events.DISCONNECTED)
         ):
-            self.printActive = False
+            self.print_active = False
 
         if (event == Events.PRINT_FAILED) or (event == Events.PRINT_CANCELLED):
             self.printing = False
-            currentTime = time.mktime(time.gmtime())
-            if (self.currentPrintStartTime != 0) and (
-                currentTime > self.currentPrintStartTime
+            current_time = time.mktime(time.gmtime())
+            if (self.current_print_start_time != 0) and (
+                current_time > self.current_print_start_time
             ):
-                self.currentProjectPrintFailTime = self.currentProjectPrintFailTime + (
-                    currentTime - self.currentPrintStartTime
+                self.current_project_print_fail_time = self.current_project_print_fail_time + (
+                    current_time - self.current_print_start_time
                 )
                 self._settings.set(
-                    ["currentProjectPrintFailTime"], self.currentProjectPrintFailTime
+                    ["currentProjectPrintFailTime"], self.current_project_print_fail_time
                 )
                 self._settings.set(
                     ["currentProjectPrintFailTimeFriendly"],
                     str(
                         datetime.timedelta(
-                            seconds=int(self.currentProjectPrintFailTime)
+                            seconds=int(self.current_project_print_fail_time)
                         )
                     ),
                 )
 
-                self.totalPrintFailTime = self.totalPrintFailTime + (
-                    currentTime - self.currentPrintStartTime
+                self.total_print_fail_time = self.total_print_fail_time + (
+                    current_time - self.current_print_start_time
                 )
-                self._settings.set(["totalPrintFailTime"], self.totalPrintFailTime)
+                self._settings.set(["totalPrintFailTime"], self.total_print_fail_time)
                 self._settings.set(
                     ["totalPrintFailTimeFriendly"],
-                    str(datetime.timedelta(seconds=int(self.totalPrintFailTime))),
+                    str(datetime.timedelta(seconds=int(self.total_print_fail_time))),
                 )
 
                 self._logger.info("totalPrintFailTime:")
-                self._logger.info(self.totalPrintFailTime)
-            self.currentPrintStartTime = 0
-            self._settings.set(["currentPrintStartTime"], self.currentPrintStartTime)
-            self.updateElapsedTimer = False
-            self.currentPrintElapsedTime = 0
+                self._logger.info(self.total_print_fail_time)
+            self.current_print_start_time = 0
+            self._settings.set(["currentPrintStartTime"], self.current_print_start_time)
+            self.update_elapsed_timer = False
+            self.current_print_elapsed_time = 0
             self._settings.set(
-                ["currentPrintElapsedTime"], self.currentPrintElapsedTime
+                ["currentPrintElapsedTime"], self.current_print_elapsed_time
             )
             self._settings.save()
-            self.triggerSettingsUpdate()
+            self.trigger_settings_update()
 
-            # self.currentProjectPrintSuccessTime = self.currentProjectPrintSuccessTime +
+            # self.current_project_print_success_time = self.current_project_print_success_time +
 
         if event == Events.PRINT_DONE:
             self._logger.info("PRINT_DONE triggered.")
-            self.currentProjectPrintSuccessTime = (
-                self.currentProjectPrintSuccessTime + payload["time"]
+            self.current_project_print_success_time = (
+                self.current_project_print_success_time + payload["time"]
             )
-            self.totalPrintSuccessTime = self.totalPrintSuccessTime + payload["time"]
-            self._settings.set(["totalPrintSuccessTime"], self.totalPrintSuccessTime)
+            self.total_print_success_time = self.total_print_success_time + payload["time"]
+            self._settings.set(["totalPrintSuccessTime"], self.total_print_success_time)
             self._settings.set(
                 ["totalPrintSuccessTimeFriendly"],
-                str(datetime.timedelta(seconds=int(self.totalPrintSuccessTime))),
+                str(datetime.timedelta(seconds=int(self.total_print_success_time))),
             )
             self._settings.set(
-                ["currentProjectPrintSuccessTime"], self.currentProjectPrintSuccessTime
+                ["currentProjectPrintSuccessTime"], self.current_project_print_success_time
             )
             self._settings.set(
                 ["currentProjectPrintSuccessTimeFriendly"],
                 str(
-                    datetime.timedelta(seconds=int(self.currentProjectPrintSuccessTime))
+                    datetime.timedelta(seconds=int(self.current_project_print_success_time))
                 ),
             )
 
             self._settings.save()
             # octoprint.settings.Settings.save()
             self.printing = False
-            self.currentPrintStartTime = 0
-            self.updateElapsedTimer = False
-            self.currentPrintElapsedTime = 0
+            self.current_print_start_time = 0
+            self.update_elapsed_timer = False
+            self.current_print_elapsed_time = 0
             self._settings.set(["printing"], self.printing)
-            self._settings.set(["currentPrintStartTime"], self.currentPrintStartTime)
+            self._settings.set(["currentPrintStartTime"], self.current_print_start_time)
             self._settings.set(
-                ["currentPrintElapsedTime"], self.currentPrintElapsedTime
+                ["currentPrintElapsedTime"], self.current_print_elapsed_time
             )
             self._settings.save()
-            self.triggerSettingsUpdate()
+            self.trigger_settings_update()
 
         if event == Events.DISCONNECTED:
-            self.printerValueGood = False
+            self.printer_value_good = False
 
         if event == Events.CONNECTED:
-            self.requestValues()
+            self.request_values()
 
-    def triggerSettingsUpdate(self):
+    def trigger_settings_update(self):
         payload = dict(
             config_hash=self._settings.config_hash,
             effective_hash=self._settings.effective_hash,
         )
         self._event_bus.fire(Events.SETTINGS_UPDATED, payload=payload)
 
-    def updateElapsedTime(self):
-        if self.printing and self.updateElapsedTimer:
-            self.currentPrintElapsedTime = time.mktime(time.gmtime())
+    def update_elapsed_time(self):
+        if self.printing and self.update_elapsed_timer:
+            self.current_print_elapsed_time = time.mktime(time.gmtime())
             self._settings.set(
-                ["currentPrintElapsedTime"], self.currentPrintElapsedTime
+                ["currentPrintElapsedTime"], self.current_print_elapsed_time
             )
             self._settings.save()
             self._logger.info("New currentPrintElapsedTime:")
-            self._logger.info(self.currentPrintElapsedTime)
+            self._logger.info(self.current_print_elapsed_time)
 
     def _to_unicode(self, s_or_u, encoding="utf-8", errors="strict"):
         """Make sure ``s_or_u`` is a unicode string."""
@@ -773,7 +773,7 @@ class MGSetupPlugin(
 
         try:
             p = sarge.run(
-                command, async=True, stdout=sarge.Capture(), stderr=sarge.Capture()
+                command, async_=True, stdout=sarge.Capture(), stderr=sarge.Capture()
             )
             while len(p.commands) == 0:
                 # somewhat ugly... we can't use wait_events because
@@ -822,10 +822,10 @@ class MGSetupPlugin(
         last_print = None
         try:
             while p.commands[0].poll() is None:
-                errorFlag = None
+                error_flag = None
                 lines = p.stderr.readlines(timeout=0.5)
                 if lines:
-                    if errorFlag == False:
+                    if error_flag == False:
                         self._plugin_manager.send_plugin_message(
                             "mgsetup", dict(commandResponse="\n\r")
                         )
@@ -837,8 +837,8 @@ class MGSetupPlugin(
                         "mgsetup", dict(commandError=all_stderr)
                     )
                     all_stderr = []
-                    # self.mgLog(lines,2)
-                    errorFlag = True
+                    # self.mg_log(lines,2)
+                    error_flag = True
                     last_print = True
 
                 lines = p.stdout.readlines(timeout=0.5)
@@ -853,9 +853,9 @@ class MGSetupPlugin(
                     )
                     all_stdout = []
                     last_print = True
-                    # self.mgLog(lines,2)
+                    # self.mg_log(lines,2)
                 else:
-                    # if (errorFlag == None) and (last_print == False):
+                    # if (error_flag == None) and (last_print == False):
                     # self._plugin_manager.send_plugin_message("mgsetup", dict(commandResponse = "."))
                     last_print = False
 
@@ -872,7 +872,7 @@ class MGSetupPlugin(
             )
             all_stderr = []
             self._logger.info(lines)
-            # self.mgLog(lines,2)
+            # self.mg_log(lines,2)
 
         lines = p.stdout.readlines()
         if lines:
@@ -888,13 +888,13 @@ class MGSetupPlugin(
             all_stdout = []
         return p.returncode, all_stdout, all_stderr
 
-    def counterTest(self, actionMaybe):
+    def counter_test(self, action_maybe):
         self._execute("/home/pi/.octoprint/scripts/counter.sh")
         # p = subprocess.call("/home/pi/.octoprint/scripts/counter.sh", shell=True)
         # while p.poll():
         # 	self._logger.info(p.readline())
 
-    def backUpConfigYaml(self):
+    def back_up_config_yaml(self):
         try:
             if not os.path.isfile("/home/pi/.octoprint/config.yaml.backup"):
                 shutil.copyfile(
@@ -906,10 +906,10 @@ class MGSetupPlugin(
                     dict(commandResponse="Copied config.yaml to config.yaml.backup.\n"),
                 )
             else:
-                newBackup = str(datetime.datetime.now().strftime("%y-%m-%d.%H:%M"))
+                new_backup = str(datetime.datetime.now().strftime("%y-%m-%d.%H:%M"))
                 shutil.copyfile(
                     "/home/pi/.octoprint/config.yaml.backup",
-                    "/home/pi/.octoprint/config.yaml.backup." + newBackup,
+                    "/home/pi/.octoprint/config.yaml.backup." + new_backup,
                 )
                 shutil.copyfile(
                     "/home/pi/.octoprint/config.yaml",
@@ -919,7 +919,7 @@ class MGSetupPlugin(
                     "mgsetup",
                     dict(
                         commandResponse="Copied config.yaml.backup to config.yaml.backup."
-                        + newBackup
+                        + new_backup
                         + " and copied config.yaml to config.yaml.backup.\n"
                     ),
                 )
@@ -947,18 +947,18 @@ class MGSetupPlugin(
                     ),
                 )
 
-    def collectLogs(self):
+    def collect_logs(self):
         # src_files = os.listdir(self._basefolder+"/static/maintenance/cura/")
-        # mainLogFolder = octoprint.settings.Settings.get(octoprint.settings.settings(),["settings", "folder", "logs"])
-        mainLogFolder = "/home/pi/.octoprint/logs"
-        mainLogs = os.listdir(mainLogFolder)
-        pluginLogFolder = self._basefolder + "/logs"
-        pluginLogs = os.listdir(pluginLogFolder)
+        # main_log_folder = octoprint.settings.Settings.get(octoprint.settings.settings(),["settings", "folder", "logs"])
+        main_log_folder = "/home/pi/.octoprint/logs"
+        main_logs = os.listdir(main_log_folder)
+        plugin_log_folder = self._basefolder + "/logs"
+        plugin_logs = os.listdir(plugin_log_folder)
 
-        # for file_name in mainLogs:
-        # 	allLogs = os.path.join(mainLogFolder, file_name)
-        # for file_name in pluginLogs:
-        # 	allLogs = allLogs + os.path.join(pluginLogFolder, file_name)
+        # for file_name in main_logs:
+        # 	allLogs = os.path.join(main_log_folder, file_name)
+        # for file_name in plugin_logs:
+        # 	allLogs = allLogs + os.path.join(plugin_log_folder, file_name)
 
         # self._logger.info(allLogs)
         # zipname = "/home/pi/" + str(datetime.datetime.now().strftime('%y-%m-%d.%H.%M'))+".zip"
@@ -966,31 +966,31 @@ class MGSetupPlugin(
             self._plugin_manager.send_plugin_message(
                 "mgsetup", dict(commandError="Preparing Logs, Please Wait.\n\n")
             )
-            lastFive = "".join(list(self.serial)[3:])
-            zipNameDate = (
+            last_five = "".join(list(self.serial)[3:])
+            zip_name_date = (
                 "MGSetup-Logs-"
-                + lastFive
+                + last_five
                 + "-"
                 + str(datetime.datetime.now().strftime("%y-%m-%d_%H-%M"))
             )
-            zipname = self._basefolder + "/static/maintenance/" + zipNameDate + ".zip"
+            zipname = self._basefolder + "/static/maintenance/" + zip_name_date + ".zip"
             with ZipFile(zipname, "w", ZIP_DEFLATED) as logzip:
                 # for file_name in allLogs:
                 # 	logzip.write(file_name)
 
-                for file_name in mainLogs:
-                    tempfile = os.path.join(mainLogFolder, file_name)
+                for file_name in main_logs:
+                    tempfile = os.path.join(main_log_folder, file_name)
                     logzip.write(tempfile, os.path.basename(tempfile))
-                for file_name in pluginLogs:
-                    tempfile = os.path.join(pluginLogFolder, file_name)
+                for file_name in plugin_logs:
+                    tempfile = os.path.join(plugin_log_folder, file_name)
                     logzip.write(tempfile, os.path.basename(tempfile))
 
             self._plugin_manager.send_plugin_message(
                 "mgsetup",
-                dict(commandError="Downloading File: " + str(zipNameDate) + ".zip"),
+                dict(commandError="Downloading File: " + str(zip_name_date) + ".zip"),
             )
             self._plugin_manager.send_plugin_message(
-                "mgsetup", dict(logFile=zipNameDate + ".zip")
+                "mgsetup", dict(logFile=zip_name_date + ".zip")
             )
         except Exception as e:
             self._logger.info("collectLogs failed, exception: " + str(e))
@@ -1002,7 +1002,7 @@ class MGSetupPlugin(
                 ),
             )
 
-    def getLocalFirmwareVersion(self):
+    def get_local_firmware_version(self):
         self._logger.info("local firmware reports itself as: ")
         if os.path.isfile("/home/pi/m3firmware/src/Marlin/Version.h"):
             with open("/home/pi/m3firmware/src/Marlin/Version.h", "r") as f:
@@ -1018,11 +1018,11 @@ class MGSetupPlugin(
                     "mgsetup", dict(localfirmwareline=self.localfirmwareline)
                 )
 
-    def updateLocalFirmware(self):
+    def update_local_firmware(self):
 
         # To create a fresh copy of the target folder, git clone -b 1.1.6 https://github.com/MakerGear/m3firmware.git src1.1.6
         self._logger.info("Update Firmware started.")
-        self.backUpConfigYaml()
+        self.back_up_config_yaml()
         if not os.path.isfile("/home/pi/m3firmware/src/Marlin/lockFirmware"):
             # self._logger.info(self._execute("git -C /home/pi/m3firmware/src pull"))
             self._execute(
@@ -1038,37 +1038,37 @@ class MGSetupPlugin(
                         "count"
                     ]
                 )
-                self.activeProfile = octoprint.settings.Settings.get(
+                self.active_profile = octoprint.settings.Settings.get(
                     octoprint.settings.settings(), ["printerProfiles", "default"]
                 )
-                if self.activeProfile == None:
-                    self.extruderCount = (
+                if self.active_profile == None:
+                    self.extruder_count = (
                         self._printer_profile_manager.get_current_or_default()[
                             "extruder"
                         ]["count"]
                     )
                 else:
-                    self._logger.info("Profile: " + self.activeProfile)
+                    self._logger.info("Profile: " + self.active_profile)
                     self._logger.info(
                         "extruders: "
                         + str(
                             (
                                 self._printer_profile_manager.get_all()[
-                                    self.activeProfile
+                                    self.active_profile
                                 ]["extruder"]["count"]
                             )
                         )
                     )
-                    self.extruderCount = self._printer_profile_manager.get_all()[
-                        self.activeProfile
+                    self.extruder_count = self._printer_profile_manager.get_all()[
+                        self.active_profile
                     ]["extruder"]["count"]
 
-                # self._logger.info("extruders: "+str( ( self._printer_profile_manager.get_all() [ self.activeProfile ]["extruder"]["count"] ) ) )
-                # self.extruderCount = ( self._printer_profile_manager.get_all() [ self.activeProfile ]["extruder"]["count"] )
+                # self._logger.info("extruders: "+str( ( self._printer_profile_manager.get_all() [ self.active_profile ]["extruder"]["count"] ) ) )
+                # self.extruder_count = ( self._printer_profile_manager.get_all() [ self.active_profile ]["extruder"]["count"] )
 
                 # self._printer_profile_manager.get_all().get_current()["extruder"]["counter"]
                 # self._logger.info("extruders: "+str(self._printer_profile_manager.get_all().get_current()["extruder"]["counter"]))
-                if self.extruderCount == 2:
+                if self.extruder_count == 2:
                     try:
                         shutil.copyfile(
                             "/home/pi/m3firmware/src/Marlin/Configuration_makergear.h.m3ID",
@@ -1126,51 +1126,51 @@ class MGSetupPlugin(
             else:
 
                 # self._logger.info(self._printer_profile_manager.get_current_or_default()["extruder"]["count"])
-                self.activeProfile = (
+                self.active_profile = (
                     self._printer_profile_manager.get_current_or_default()["model"]
                 )
                 # self._logger.info(self._printer_profile_manager.get_current_or_default()["model"])
-                self._logger.info("Profile: " + self.activeProfile)
+                self._logger.info("Profile: " + self.active_profile)
 
-                newProfileString = (re.sub("[^\w]", "_", self.activeProfile)).upper()
+                new_profile_string = (re.sub("[^\w]", "_", self.active_profile)).upper()
 
                 with open(
                     "/home/pi/m3firmware/src/Marlin/Configuration_makergear.h", "r+"
                 ) as f:
-                    timeString = str(datetime.datetime.now().strftime("%y-%m-%d.%H:%M"))
-                    oldConfig = f.read()
+                    time_string = str(datetime.datetime.now().strftime("%y-%m-%d.%H:%M"))
+                    old_config = f.read()
                     f.seek(0, 0)
                     if f.readline() == "\n":
                         f.seek(0, 0)
                         f.write(
                             "#define MAKERGEAR_MODEL_"
-                            + newProfileString
+                            + new_profile_string
                             + "//AUTOMATICALLY FILLED BY MGSETUP PLUGIN - "
-                            + timeString
+                            + time_string
                             + "\n"
-                            + oldConfig
+                            + old_config
                         )
                     else:
                         f.seek(0, 0)
-                        oldLine = f.readline()
+                        old_line = f.readline()
                         f.seek(0, 0)
-                        i = oldConfig.index("\n")
-                        oldConfigStripped = oldConfig[i + 1 :]
+                        i = old_config.index("\n")
+                        old_config_stripped = old_config[i + 1 :]
                         f.write(
                             "#define MAKERGEAR_MODEL_"
-                            + newProfileString
+                            + new_profile_string
                             + "//AUTOMATICALLY FILLED BY MGSETUP PLUGIN - "
-                            + timeString
+                            + time_string
                             + "\n"
                             + "// "
-                            + oldLine
+                            + old_line
                             + "// OLD LINE BACKED UP - "
-                            + timeString
+                            + time_string
                             + "\n"
-                            + oldConfigStripped
+                            + old_config_stripped
                         )
 
-            self.getLocalFirmwareVersion()
+            self.get_local_firmware_version()
 
         else:
             self._logger.info(
@@ -1187,49 +1187,49 @@ class MGSetupPlugin(
 
     # octoprint.settings.Settings.set(octoprint.settings.settings(),["appearance", "name"],["MakerGear " +self.newhost])
 
-    def writeNetconnectdPassword(self, newPassword):
+    def write_netconnectd_password(self, new_password):
         subprocess.call(
             "/home/pi/.octoprint/scripts/changeNetconnectdPassword.sh "
-            + newPassword["password"],
+            + new_password["password"],
             shell=True,
         )
         self._logger.info(
-            "Netconnectd password changed to " + newPassword["password"] + " !"
+            "Netconnectd password changed to " + new_password["password"] + " !"
         )
 
-    def changeHostname(self, newHostname):
+    def change_hostname(self, new_hostname):
         subprocess.call(
             "/home/pi/.octoprint/scripts/changeHostname.sh "
-            + newHostname["hostname"]
+            + new_hostname["hostname"]
             + " "
             + self.newhost,
             shell=True,
         )
-        self._logger.info("Hostname changed to " + newHostname["hostname"] + " !")
+        self._logger.info("Hostname changed to " + new_hostname["hostname"] + " !")
 
-    def requestValues(self):
+    def request_values(self):
         self._printer.commands(["M503"])
 
-    def sendCurrentValues(self):
-        self.printerValueVersion = time.time()
+    def send_current_values(self):
+        self.printer_value_version = time.time()
         self._plugin_manager.send_plugin_message(
             "mgsetup",
             dict(
                 zoffsetline=self.zoffsetline,
                 tooloffsetline=self.tooloffsetline,
                 firmwareline=self.firmwareline,
-                probeOffsetLine=self.probeOffsetLine,
-                printerValueVersion=self.printerValueVersion,
+                probeOffsetLine=self.probe_offset_line,
+                printerValueVersion=self.printer_value_version,
             ),
         )
 
-    def sendValues(self, clientVersion=-1):
-        if clientVersion == self.printerValueVersion:
+    def send_values(self, client_version=-1):
+        if client_version == self.printer_value_version:
             return
-        elif self.printerValueGood:
-            self.sendCurrentValues()
+        elif self.printer_value_good:
+            self.send_current_values()
         else:
-            self.requestValues()
+            self.request_values()
 
     def get_api_commands(self):
         self._logger.info("MGSetup get_api_commands triggered.")
@@ -1270,15 +1270,15 @@ class MGSetupPlugin(
             self._logger.info("process_z_offset triggered - Warning !")
             self._plugin_manager.send_plugin_message("mgsetup", dict(mgwarnline=line))
 
-        if self.printActive:
+        if self.print_active:
             # self._logger.debug("printActive true, skipping filters.")
             # self._logger.info("printActive true, skipping filters - info")
             return line
 
         # if "M206" not in line and "M218" not in line and "FIRMWARE_NAME" not in line and "Error" not in line and "z_min" not in line and "Bed X:" not in line and "M851" not in line:
         # 	return line
-        newValuesPresent = False
-        watchCommands = [
+        new_values_present = False
+        watch_commands = [
             "M206",
             "M218",
             "FIRMWARE_NAME",
@@ -1290,7 +1290,7 @@ class MGSetupPlugin(
             "Settings Stored",
         ]
 
-        if not any([x in line for x in watchCommands]):
+        if not any([x in line for x in watch_commands]):
             return line
 
         # if ("M206" or "M218" or "FIRMWARE_NAME" or "Error" or "z_min" or "Bed X:" or "M851" or "= [[ ") not in line:
@@ -1305,7 +1305,7 @@ class MGSetupPlugin(
             self._logger.info("process_z_offset triggered - Z offset")
             self.zoffsetline = line
             self._plugin_manager.send_plugin_message("mgsetup", dict(zoffsetline=line))
-            newValuesPresent = True
+            new_values_present = True
 
         if "M218" in line:
             self._logger.info("process_z_offset triggered - Tool offset")
@@ -1313,7 +1313,7 @@ class MGSetupPlugin(
             self._plugin_manager.send_plugin_message(
                 "mgsetup", dict(tooloffsetline=line)
             )
-            newValuesPresent = True
+            new_values_present = True
 
         # __plugin_implementation__._logger.info(line)
 
@@ -1337,11 +1337,11 @@ class MGSetupPlugin(
 
         if "M851" in line:
             self._logger.info("Z Probe Offset received")
-            self.probeOffsetLine = line
+            self.probe_offset_line = line
             self._plugin_manager.send_plugin_message(
                 "mgsetup", dict(probeOffsetLine=line)
             )
-            newValuesPresent = True
+            new_values_present = True
 
         if "= [[ " in line:
             self._logger.info("Bed Leveling Information received")
@@ -1351,15 +1351,15 @@ class MGSetupPlugin(
             self._logger.info(
                 "Looks like a M500 was sent from somewhere.  Sending a M503 to check current values."
             )
-            self.requestValues()
+            self.request_values()
 
-        if newValuesPresent:
-            self.printerValueGood = True
-            self.sendValues()
+        if new_values_present:
+            self.printer_value_good = True
+            self.send_values()
 
         return line
 
-    def resetRegistration(self):
+    def reset_registration(self):
         try:  # a bunch of code with minor error checking and user alert...ion to copy scripts to the right location; should only ever need to be run once
             os.makedirs("/home/pi/.mgsetup")
         except OSError:
@@ -1373,7 +1373,7 @@ class MGSetupPlugin(
         self._settings.save()
         self._logger.info("Activation and Registration Reset!")
 
-    def disableRadios(self):
+    def disable_radios(self):
         self._execute("netconnectcli stop_ap")
         if not os.path.isfile("/boot/config.txt.backup"):
             self._execute("sudo cp /boot/config.txt /boot/config.txt.backup")
@@ -1396,7 +1396,7 @@ class MGSetupPlugin(
             )
             self._execute("sudo reboot")
 
-    def enableRadios(self):
+    def enable_radios(self):
         # if "dtoverlay=pi3-disable-wifi" in open('/boot/config.txt'):
         self._execute("sudo cp /boot/config.txt.backup /boot/config.txt")
         self._plugin_manager.send_plugin_message(
@@ -1407,15 +1407,15 @@ class MGSetupPlugin(
         )
         self._execute("sudo reboot")
 
-    def disableSmb(self):
+    def disable_smb(self):
         # if "dtoverlay=pi3-disable-wifi" in open('/boot/config.txt'):
         self._execute("sudo systemctl disable smbd")
 
-    def enableSmb(self):
+    def enable_smb(self):
         # if "dtoverlay=pi3-disable-wifi" in open('/boot/config.txt'):
         self._execute("sudo systemctl emable smbd")
 
-    def patchSmb(self):
+    def patch_smb(self):
         # if "dtoverlay=pi3-disable-wifi" in open('/boot/config.txt'):
 
         self._execute('echo "Patching SMB"')
@@ -1429,7 +1429,7 @@ class MGSetupPlugin(
         self._execute("sudo service smbd restart")
         self._execute('echo "Patch Finished"')
 
-    def lockFirmware(self):
+    def lock_firmware(self):
         if not os.path.isfile("/home/pi/m3firmware/src/Marlin/lockFirmware"):
             open("/home/pi/m3firmware/src/Marlin/lockFirmware", "a").close()
             self._logger.info("Firmware lock file created.")
@@ -1437,7 +1437,7 @@ class MGSetupPlugin(
                 "mgsetup", dict(commandError="Firmware lock file created!")
             )
 
-    def unlockFirmware(self):
+    def unlock_firmware(self):
         if os.path.isfile("/home/pi/m3firmware/src/Marlin/lockFirmware"):
             try:
                 os.remove("/home/pi/m3firmware/src/Marlin/lockFirmware")
@@ -1471,18 +1471,18 @@ class MGSetupPlugin(
                 ),
             )
 
-    def adminAction(self, action, payload={}):
+    def admin_action(self, action, payload={}):
         self._logger.info("adminAction called: " + str(action))
         if action["action"] == "turnSshOn":
-            # self.turnSshOn()
+            # self.turn_ssh_on()
             self._execute("/home/pi/.octoprint/scripts/startSsh.sh")
             self._logger.info("SSH service started!")
-            self.adminAction(dict(action="sshState"))
+            self.admin_action(dict(action="ssh_state"))
         elif action["action"] == "turnSshOff":
-            # self.turnSshOff()
+            # self.turn_ssh_off()
             self._execute("/home/pi/.octoprint/scripts/stopSsh.sh")
             self._logger.info("SSH service stopped!")
-            self.adminAction(dict(action="sshState"))
+            self.admin_action(dict(action="ssh_state"))
         elif action["action"] == "resetWifi":
             # subprocess.call("/home/pi/.octoprint/scripts/resetWifi.sh")
             self._execute("/home/pi/.octoprint/scripts/resetWifi.sh")
@@ -1492,34 +1492,34 @@ class MGSetupPlugin(
 
             self._printer.cancel_print()
             self._printer.disconnect()
-            self.mgLog(self._execute("python /home/pi/.octoprint/scripts/upload.py"), 2)
+            self.mg_log(self._execute("python /home/pi/.octoprint/scripts/upload.py"), 2)
             self._printer.connect()
 
         elif action["action"] == "uploadAndFlashFirmware":
 
-            self.updateLocalFirmware()
+            self.update_local_firmware()
 
             self._printer.cancel_print()
             self._printer.disconnect()
-            self.mgLog(self._execute("python /home/pi/.octoprint/scripts/upload.py"), 2)
+            self.mg_log(self._execute("python /home/pi/.octoprint/scripts/upload.py"), 2)
             self._printer.connect()
 
         elif action["action"] == "counterTest":
-            self.counterTest(action)
+            self.counter_test(action)
         elif action["action"] == "expandFilesystem":
             # subprocess.call("/home/pi/.octoprint/scripts/expandFilesystem.sh", shell=True)
             self._execute("/home/pi/.octoprint/scripts/expandFilesystem.sh")
             self._logger.info("Filesystem expanded - will reboot now.")
         elif action["action"] == "resetRegistration":
             self._logger.info("Registration reset!")
-            self.resetRegistration()
+            self.reset_registration()
         elif action["action"] == "patch":
             self._logger.info("Patch started.")
             self._execute(
                 "/home/pi/oprint/local/lib/python2.7/site-packages/octoprint_mgsetup/static/patch/patch.sh"
             )
         elif action["action"] == "updateFirmware":
-            self.updateLocalFirmware()
+            self.update_local_firmware()
         elif action["action"] == "showIfconfig":
             self._logger.info("Showing ifconfig / netconnectcli status.")
             self._execute("ifconfig")
@@ -1534,37 +1534,37 @@ class MGSetupPlugin(
             self._logger.info("Showing w | head -n1.")
             self._execute("w | head -n1")
         elif action["action"] == "lockFirmware":
-            self.lockFirmware()
+            self.lock_firmware()
         elif action["action"] == "unlockFirmware":
-            self.unlockFirmware()
+            self.unlock_firmware()
         elif action["action"] == "disableRadios":
-            self.disableRadios()
+            self.disable_radios()
         elif action["action"] == "enableRadios":
-            self.enableRadios()
+            self.enable_radios()
         elif action["action"] == "disableSmb":
-            self.disableSmb()
+            self.disable_smb()
         elif action["action"] == "enableSmb":
-            self.enableSmb()
+            self.enable_smb()
         elif action["action"] == "patchSmb":
-            self.patchSmb()
+            self.patch_smb()
         elif action["action"] == "flushPrintActive":
-            self.printActive = False
-            self.mgLog("flushPrintActive called", 0)
+            self.print_active = False
+            self.mg_log("flushPrintActive called", 0)
         elif action["action"] == "collectLogs":
-            self.collectLogs()
-            self.mgLog("collectLogs called", 0)
+            self.collect_logs()
+            self.mg_log("collectLogs called", 0)
             return "collectLogs called"
 
-        elif action["action"] == "sshState":
+        elif action["action"] == "ssh_state":
             self._logger.info("Showing sudo service ssh status.")
-            sshState = self._execute("sudo service ssh status")
-            self._logger.info(sshState)
-            if "Active: active" in str(sshState[1]):
-                self._logger.info("Active: active in sshState")
+            ssh_state = self._execute("sudo service ssh status")
+            self._logger.info(ssh_state)
+            if "Active: active" in str(ssh_state[1]):
+                self._logger.info("Active: active in ssh_state")
                 self._settings.set(["sshOn"], True)
                 self._settings.save()
             else:
-                self._logger.info("Active: active not in sshState")
+                self._logger.info("Active: active not in ssh_state")
                 self._settings.set(["sshOn"], False)
                 self._settings.save()
 
@@ -1575,7 +1575,7 @@ class MGSetupPlugin(
             self._logger.info("Logpatch started.")
 
             # subprocess.call("/home/pi/oprint/local/lib/python2.7/site-packages/octoprint_mgsetup/static/patch/logpatch.sh")
-            self.mgLog(
+            self.mg_log(
                 self._execute(
                     "/home/pi/oprint/local/lib/python2.7/site-packages/octoprint_mgsetup/static/patch/logpatch.sh"
                 ),
@@ -1626,42 +1626,42 @@ class MGSetupPlugin(
             # 				raise
 
         # elif action["action"] == "setCurrentTest":
-        # 	self.currentProjectPrintSuccessTime = 0
+        # 	self.current_project_print_success_time = 0
         # 	if
-        # 	self.currentProjectName =
-        # 	self._settings.set(["currentProjectPrintSuccessTime"],self.currentProjectPrintSuccessTime)
+        # 	self.current_project_name =
+        # 	self._settings.set(["currentProjectPrintSuccessTime"],self.current_project_print_success_time)
         # 	self._settings.save()
 
         elif action["action"] == "resetCurrentProject":
             self._logger.info("newProjectName:")
             self._logger.info(action["payload"]["newProjectName"])
             if "newProjectName" in action["payload"]:
-                self.currentProjectName = action["payload"]["newProjectName"]
+                self.current_project_name = action["payload"]["newProjectName"]
             else:
-                self.currentProjectName = ""
-            self.currentProjectPrintSuccessTime = 0
-            self.currentProjectPrintFailTime = 0
-            self.currentProjectMachineFailTime = 0
+                self.current_project_name = ""
+            self.current_project_print_success_time = 0
+            self.current_project_print_fail_time = 0
+            self.current_project_machine_fail_time = 0
             self._settings.set(
-                ["currentProjectPrintSuccessTime"], self.currentProjectPrintSuccessTime
+                ["currentProjectPrintSuccessTime"], self.current_project_print_success_time
             )
             self._settings.set(
-                ["currentProjectPrintFailTime"], self.currentProjectPrintFailTime
+                ["currentProjectPrintFailTime"], self.current_project_print_fail_time
             )
             self._settings.set(
-                ["currentProjectMachineFailTime"], self.currentProjectMachineFailTime
+                ["currentProjectMachineFailTime"], self.current_project_machine_fail_time
             )
-            self._settings.set(["currentProjectName"], self.currentProjectName)
+            self._settings.set(["currentProjectName"], self.current_project_name)
 
             self._settings.save()
-            self.triggerSettingsUpdate()
+            self.trigger_settings_update()
 
         elif action["action"] == "printerUpgrade":
-            self.printerUpgrade(action["payload"])
+            self.printer_upgrade(action["payload"])
 
-    def printerUpgrade(self, upgradeInfo):
+    def printer_upgrade(self, upgrade_info):
         self._logger.info("printerUpgrade debug position 1.")
-        if upgradeInfo["upgradeType"] == None:
+        if upgrade_info["upgradeType"] == None:
             self._plugin_manager.send_plugin_message(
                 "mgsetup",
                 dict(commandError="Unknown upgrade / no upgrade chosen, canceling.\n"),
@@ -1669,13 +1669,13 @@ class MGSetupPlugin(
             return
         # self._plugin_manager.send_plugin_message("mgsetup", dict(commandResponse = "Starting the Upgrade process.\n"))
 
-        if upgradeInfo["upgradeType"] == "idRev0toRev1":
+        if upgrade_info["upgradeType"] == "idRev0toRev1":
             self._logger.info("printerUpgrade debug position 2.")
 
             # self._printer.disconnect()
             # self._plugin_manager.send_plugin_message("mgsetup", dict(commandResponse = "Printer disconnected.\n"))
             try:
-                newProfile = dict(
+                new_profile = dict(
                     name="M3-ID-Rev1-000",
                     color="default",
                     axes=dict(
@@ -1709,13 +1709,13 @@ class MGSetupPlugin(
                         sharedNozzle=False,
                     ),
                 )
-                self._printer_profile_manager.save(newProfile, True, True)
-                self._printer_profile_manager.select(newProfile["name"])
+                self._printer_profile_manager.save(new_profile, True, True)
+                self._printer_profile_manager.select(new_profile["name"])
                 self._plugin_manager.send_plugin_message(
                     "mgsetup",
                     dict(commandResponse="New profile created and selected.\n"),
                 )
-                self.triggerSettingsUpdate()
+                self.trigger_settings_update()
                 self._logger.info("printerUpgrade debug position 3.")
 
             except Exception as e:
@@ -1748,45 +1748,45 @@ class MGSetupPlugin(
                 )
                 self._logger.info("printerUpgrade debug position 5.")
 
-                newProfileString = (re.sub("[^\w]", "_", newProfile["model"])).upper()
+                new_profile_string = (re.sub("[^\w]", "_", new_profile["model"])).upper()
 
                 with open(
                     "/home/pi/m3firmware/src/Marlin/Configuration_makergear.h", "r+"
                 ) as f:
-                    timeString = str(datetime.datetime.now().strftime("%y-%m-%d.%H:%M"))
-                    oldConfig = f.read()
+                    time_string = str(datetime.datetime.now().strftime("%y-%m-%d.%H:%M"))
+                    old_config = f.read()
                     f.seek(0, 0)
                     if f.readline() == "\n":
                         f.seek(0, 0)
                         f.write(
                             "#define MAKERGEAR_MODEL_"
-                            + newProfileString
+                            + new_profile_string
                             + "//AUTOMATICALLY FILLED BY MGSETUP PLUGIN - "
-                            + timeString
+                            + time_string
                             + "\n"
-                            + oldConfig
+                            + old_config
                         )
                     else:
                         f.seek(0, 0)
-                        oldLine = f.readline()
+                        old_line = f.readline()
                         f.seek(0, 0)
-                        i = oldConfig.index("\n")
-                        oldConfigStripped = oldConfig[i + 1 :]
+                        i = old_config.index("\n")
+                        old_config_stripped = old_config[i + 1 :]
                         f.write(
                             "#define MAKERGEAR_MODEL_"
-                            + newProfileString
+                            + new_profile_string
                             + "//AUTOMATICALLY FILLED BY MGSETUP PLUGIN - "
-                            + timeString
+                            + time_string
                             + "\n"
                             + "// "
-                            + oldLine
+                            + old_line
                             + "// OLD LINE BACKED UP - "
-                            + timeString
+                            + time_string
                             + "\n"
-                            + oldConfigStripped
+                            + old_config_stripped
                         )
 
-                self.mgLog(
+                self.mg_log(
                     self._execute("python /home/pi/.octoprint/scripts/upload.py"), 2
                 )
                 self._plugin_manager.send_plugin_message(
@@ -1829,15 +1829,15 @@ class MGSetupPlugin(
             )
             self._logger.info("printerUpgrade debug position 8.")
 
-    def turnSshOn(self):
+    def turn_ssh_on(self):
         subprocess.call("/home/pi/.octoprint/scripts/startSsh.sh")
         self._logger.info("SSH service started!")
-        self.adminAction(dict(action="sshState"))
+        self.admin_action(dict(action="sshState"))
 
-    def turnSshOff(self):
+    def turn_ssh_off(self):
         subprocess.call("/home/pi/.octoprint/scripts/stopSsh.sh")
         self._logger.info("SSH service stopped!")
-        self.adminAction(dict(action="sshState"))
+        self.admin_action(dict(action="sshState"))
 
     def on_api_command(self, command, data):
         self._logger.info(
@@ -1847,13 +1847,13 @@ class MGSetupPlugin(
             + str(data)
         )
         if command == "turnSshOn":
-            self.turnSshOn()
+            self.turn_ssh_on()
         elif command == "turnSshOff":
-            self.turnSshOff()
+            self.turn_ssh_off()
         elif command == "adminAction":
-            self.adminAction(data)
+            self.admin_action(data)
         elif command == "writeNetconnectdPassword":
-            # self.writeNetconnectdPassword(data)
+            # self.write_netconnectd_password(data)
             self._execute(
                 "/home/pi/.octoprint/scripts/changeNetconnectdPassword.sh "
                 + data["password"]
@@ -1862,7 +1862,7 @@ class MGSetupPlugin(
                 "Netconnectd password changed to " + data["password"] + " !"
             )
         elif command == "changeHostname":
-            # self.changeHostname(data)
+            # self.change_hostname(data)
             self._execute(
                 "/home/pi/.octoprint/scripts/changeHostname.sh "
                 + data["hostname"]
@@ -1871,26 +1871,26 @@ class MGSetupPlugin(
             )
             self._logger.info("Hostname changed to " + data["hostname"] + " !")
         elif command == "storeActivation":
-            self.storeActivation(data)
+            self.store_activation(data)
         elif command == "checkActivation":
-            self.checkActivation(data)
+            self.check_activation(data)
         elif command == "remindLater":
-            self.remindLater()
+            self.remind_later()
         elif command == "checkGoogle":
-            self.checkInternet(3, 3, data["url"])
+            self.check_internet(3, 3, data["url"])
         elif command == "flushPrintActive":
-            self.printActive = False
+            self.print_active = False
             self._logger.info("flushPrintActive executed.")
         elif command == "mgLog":
-            self.mgLog(data["stringToLog"], data["priority"])
+            self.mg_log(data["stringToLog"], data["priority"])
         elif command == "sendValues":
-            self.sendValues(data["clientVersion"])
+            self.send_values(data["clientVersion"])
 
-    def sendSerial(self):
+    def send_serial(self):
         self._logger.info("MGSetup sendSerial triggered.")
         self._plugin_manager.send_plugin_message("mgsetup", dict(serial=self.serial))
 
-    def storeActivation(self, activation):
+    def store_activation(self, activation):
         self._logger.info(activation)
         try:  # a bunch of code with minor error checking and user alert...ion to copy scripts to the right location; should only ever need to be run once
             os.makedirs("/home/pi/.mgsetup")
@@ -1903,10 +1903,10 @@ class MGSetupPlugin(
         self._settings.set(["registered"], True)
         self._settings.save()
 
-    def checkActivation(self, userActivation):
+    def check_activation(self, user_activation):
         with open("/home/pi/.mgsetup/actkey", "r") as f:
             self.activation = f.readline().strip()
-            if self.activation == userActivation["userActivation"]:
+            if self.activation == user_activation["user_activation"]:
                 self._logger.info("Activation successful!")
                 self._settings.set(["activated"], True)
                 self._settings.save()
@@ -1924,7 +1924,7 @@ class MGSetupPlugin(
 
     def get_update_information(self):
         self._logger.info("MGSetup get_update_information triggered.")
-        if self.pluginVersion == "master":
+        if self.plugin_version == "master":
             return dict(
                 octoprint_mgsetup=dict(
                     displayName="Makergear Setup",
@@ -1939,7 +1939,7 @@ class MGSetupPlugin(
                     pip="https://github.com/MakerGear/MakerGear_OctoPrint_Setup/archive/{target_version}.zip",
                 )
             )
-        if self.pluginVersion == "refactor":
+        if self.plugin_version == "refactor":
             return dict(
                 octoprint_mgsetup=dict(
                     displayName="Makergear Setup",
@@ -1983,7 +1983,7 @@ class MGSetupPlugin(
 
 
 # __plugin_settings_overlay__ = {appearance: {components: {order: {tab: {'- plugin_mgsetup'}}}}}
-# __plugin_settings_overlay__ = dict(appearance=dict(components=dict(order=dict(tab=[MGSetupPlugin().firstTabName]))))
+# __plugin_settings_overlay__ = dict(appearance=dict(components=dict(order=dict(tab=[MGSetupPlugin().first_tab_name]))))
 # __plugin_settings_overlay__ = dict(server=dict(port=5001))
 
 __plugin_name__ = "MakerGear Setup"
