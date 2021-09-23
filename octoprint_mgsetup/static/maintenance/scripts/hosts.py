@@ -24,19 +24,19 @@ def get_ip_address(ifname):
             struct.pack('256s', ifname[:15])
         )[20:24])
     except:
-        print "no such device"
+        print("no such device")
 
 
 try:
     wlanip =  get_ip_address('wlan0').split(".")
 except:
-        print "no ip on wlan"
+        print("no ip on wlan")
 
 
 try:
     ethip = get_ip_address('eth0').split(".")
 except:
-        print "no ip on eth"
+        print("no ip on eth")
 
 
 
@@ -68,7 +68,7 @@ try:
 
     target.close()
 except IOError as e:
-    print "Target file could not be found! Error: "+str(e)
+    print("Target file could not be found! Error: "+str(e))
 
 
 

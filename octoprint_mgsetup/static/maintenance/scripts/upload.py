@@ -61,20 +61,20 @@ os.chdir("/home/pi/m3firmware/")
 
 try:
 	subprocess.check_output('platformio run --target clean >> /home/pi/.octoprint/logs/firmware.log',shell=True)
-	print "Cleaned Compilation Build - Starting Compiling"
+	print("Cleaned Compilation Build - Starting Compiling")
 	sys.stdout.flush()
 except subprocess.CalledProcessError:
-	print "Failed to Clean directory, quitting"
+	print("Failed to Clean directory, quitting")
 	sys.stdout.flush()
 	quit()
 
 
 try:
 	subprocess.check_output('platformio run >> /home/pi/.octoprint/logs/firmware.log',shell=True)
-	print "Compilation Successful "
+	print("Compilation Successful ")
 	sys.stdout.flush()
 except subprocess.CalledProcessError:
-	print "Failed to Compile Script, quitting"
+	print("Failed to Compile Script, quitting")
 	sys.stdout.flush()
 	quit()
 
@@ -274,11 +274,11 @@ sys.stdout.flush()
 
 try:
 	subprocess.check_output('/home/pi/.platformio/packages/tool-avrdude/avrdude -cwiring -p atmega2560 -P/dev/ttyS0 -b115200 -D -Uflash:w:.pioenvs/megaatmega2560/firmware.hex >> /home/pi/.octoprint/logs/firmware.log',shell=True)
-	print "Upload Successful "
+	print("Upload Successful ")
 	subprocess.check_output('echo Upload Sucessful >> /home/pi/.octoprint/logs/firmware.log',shell=True)
 	sys.stdout.flush()
 except subprocess.CalledProcessError:
-	print "Failed to Upload, quitting"
+	print("Failed to Upload, quitting")
 	subprocess.check_output('echo Failed to Upload, quitting >> /home/pi/.octoprint/logs/firmware.log',shell=True)
 	sys.stdout.flush()
 	quit()
@@ -287,7 +287,7 @@ except subprocess.CalledProcessError:
 time.sleep(5)
 
 if matcher != None :
-	print "Restoring parameters "
+	print("Restoring parameters ")
 	subprocess.check_output('echo Restoring parameters >> /home/pi/.octoprint/logs/firmware.log',shell=True)
 	sys.stdout.flush()
 
@@ -323,7 +323,7 @@ if matcher != None :
 
 ser.close
 
-print "Finished!"
+print("Finished!")
 sys.stdout.flush()
 
 

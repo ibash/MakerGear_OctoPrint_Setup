@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-from __future__ import print_function
+
 import RPi.GPIO as GPIO
 import subprocess, time, socket
 import serial
@@ -206,18 +206,18 @@ def resetPasswordHold():
 
 
   #ensure all permissions are correctly set
-  chmodAndLog("/etc/netconnectd.yaml", 0600,logfile)
-  chmodAndLog("/etc/network/interfaces", 0644,logfile)
-  chmodAndLog("/home/pi/.octoprint/config.yaml", 0600,logfile)
-  chmodAndLog("/home/pi/.octoprint/users.yaml", 0600,logfile)
+  chmodAndLog("/etc/netconnectd.yaml", 0o600,logfile)
+  chmodAndLog("/etc/network/interfaces", 0o644,logfile)
+  chmodAndLog("/home/pi/.octoprint/config.yaml", 0o600,logfile)
+  chmodAndLog("/home/pi/.octoprint/users.yaml", 0o600,logfile)
 
   
-  chmodAndLog("/etc/netconnectd.yaml.userold", 0600,logfile)
-  chmodAndLog("/etc/network/interfaces.userold", 0644,logfile)
-  chmodAndLog("/home/pi/.octoprint/config.yaml.userold", 0600,logfile)
-  chmodAndLog("/home/pi/.octoprint/users.yaml.userold", 0600,logfile)
+  chmodAndLog("/etc/netconnectd.yaml.userold", 0o600,logfile)
+  chmodAndLog("/etc/network/interfaces.userold", 0o644,logfile)
+  chmodAndLog("/home/pi/.octoprint/config.yaml.userold", 0o600,logfile)
+  chmodAndLog("/home/pi/.octoprint/users.yaml.userold", 0o600,logfile)
 
-  chmodAndLog("/home/pi/", 0755,logfile)
+  chmodAndLog("/home/pi/", 0o755,logfile)
 
 
   #get GID/UID

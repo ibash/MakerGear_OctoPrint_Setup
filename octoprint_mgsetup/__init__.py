@@ -1,6 +1,6 @@
 # coding=utf-8
 
-from __future__ import absolute_import, division, print_function
+
 import re
 
 
@@ -20,7 +20,7 @@ import time
 import datetime
 import errno
 import sys
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 from logging.handlers import TimedRotatingFileHandler
 from logging.handlers import RotatingFileHandler
 from zipfile import *
@@ -217,12 +217,12 @@ class MGSetupPlugin(octoprint.plugin.StartupPlugin,
 		for i in range(0, iterations+1):
 			self._logger.info("Testing Internet Connection, iteration "+str(i)+" of "+str(iterations)+", timeout of "+str(timeout)+" .")
 			try:
-				response=urllib2.urlopen(url,timeout=timeout)
+				response=urllib.request.urlopen(url,timeout=timeout)
 				self._logger.info("Check Internet Passed.  URL: "+str(url))
 				self.internetConnection = True
 				self._plugin_manager.send_plugin_message("mgsetup", dict(internetConnection = self.internetConnection))
 				return True
-			except urllib2.URLError as err: pass
+			except urllib.error.URLError as err: pass
 			if (i >= iterations):
 				self._logger.info("Testing Internet Connection Failed, iteration "+str(i)+" of "+str(iterations)+", timeout of "+str(timeout)+" .  Looking for URL: "+str(url))
 				self.internetConnection = False
@@ -281,7 +281,7 @@ class MGSetupPlugin(octoprint.plugin.StartupPlugin,
 					shutil.copy(full_src_name, dest)
 					self._logger.info("Had to overwrite "+file_name+" with new version.")
 			if ".sh" in file_name:
-				os.chmod(full_dest_name, 0755)
+				os.chmod(full_dest_name, 0o755)
 
 		src_files = os.listdir(self._basefolder+"/static/maintenance/cura/")
 		src = (self._basefolder+"/static/maintenance/cura/")
@@ -297,19 +297,19 @@ class MGSetupPlugin(octoprint.plugin.StartupPlugin,
 					shutil.copy(full_src_name, dest)
 					self._logger.info("Had to overwrite "+file_name+" with new version.")
 		try:
-			os.chmod(self._basefolder+"/static/js/hostname.js", 0666)
+			os.chmod(self._basefolder+"/static/js/hostname.js", 0o666)
 		except OSError:
 			self._logger.info("Hostname.js doesn't exist?")
 		except:
 			raise
 		try:
-			os.chmod(self._basefolder+"/static/patch/patch.sh", 0755)
+			os.chmod(self._basefolder+"/static/patch/patch.sh", 0o755)
 		except OSError:
 			self._logger.info("Patch.sh doesn't exist?")
 		except:
 			raise
 		try:
-			os.chmod(self._basefolder+"/static/patch/logpatch.sh", 0755)
+			os.chmod(self._basefolder+"/static/patch/logpatch.sh", 0o755)
 		except OSError:
 			self._logger.info("logpatch.sh doesn't exist?")
 		except:
@@ -318,7 +318,7 @@ class MGSetupPlugin(octoprint.plugin.StartupPlugin,
 
 		try:
 			self.ip = str(([l for l in ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][:1], [[(s.connect(('8.8.8.8', 53)), s.getsockname()[0], s.close()) for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]]) if l][0][0]))
-		except IOError, e:
+		except IOError as e:
 			self._logger.info(e)
 		except:
 			raise
@@ -622,7 +622,7 @@ class MGSetupPlugin(octoprint.plugin.StartupPlugin,
 					if errorFlag == False:
 						self._plugin_manager.send_plugin_message("mgsetup", dict(commandResponse = "\n\r"))
 
-					lines = map(lambda x: self._to_unicode(x, errors="replace"), lines)
+					lines = [self._to_unicode(x, errors="replace") for x in lines]
 					#_log_stderr(*lines)
 					all_stderr += list(lines)
 					self._plugin_manager.send_plugin_message("mgsetup", dict(commandError = all_stderr))
@@ -633,7 +633,7 @@ class MGSetupPlugin(octoprint.plugin.StartupPlugin,
 
 				lines = p.stdout.readlines(timeout=0.5)
 				if lines:
-					lines = map(lambda x: self._to_unicode(x, errors="replace"), lines)
+					lines = [self._to_unicode(x, errors="replace") for x in lines]
 					#_log_stdout(*lines)
 					all_stdout += list(lines)
 					self._logger.info(lines)
@@ -653,7 +653,7 @@ class MGSetupPlugin(octoprint.plugin.StartupPlugin,
 
 		lines = p.stderr.readlines()
 		if lines:
-			lines = map(lambda x: self._to_unicode(x, errors="replace"), lines)
+			lines = [self._to_unicode(x, errors="replace") for x in lines]
 			#_log_stderr(*lines)
 			all_stderr += lines
 			self._plugin_manager.send_plugin_message("mgsetup", dict(commandError = all_stderr))
@@ -663,7 +663,7 @@ class MGSetupPlugin(octoprint.plugin.StartupPlugin,
 
 		lines = p.stdout.readlines()
 		if lines:
-			lines = map(lambda x: self._to_unicode(x, errors="replace"), lines)
+			lines = [self._to_unicode(x, errors="replace") for x in lines]
 			#_log_stdout(*lines)
 			all_stdout += lines
 
@@ -698,7 +698,7 @@ class MGSetupPlugin(octoprint.plugin.StartupPlugin,
 			else:
 				self._execute("sudo chgrp pi /home/pi/.octoprint/config.yaml.backup")
 				self._execute("sudo chown pi /home/pi/.octoprint/config.yaml.backup")
-				os.chmod("/home/pi/.octoprint/config.yaml.backup", 0600)
+				os.chmod("/home/pi/.octoprint/config.yaml.backup", 0o600)
 				self._plugin_manager.send_plugin_message("mgsetup", dict(commandError = "Changed the owner, group and permissions of config.yaml.backup - please try to Update Firmware again to backup config.yaml.\n"))
 
 	def collectLogs(self):
