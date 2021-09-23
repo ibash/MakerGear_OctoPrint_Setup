@@ -1996,6 +1996,7 @@ class MGSetupPlugin(
 # __plugin_settings_overlay__ = dict(server=dict(port=5001))
 
 __plugin_name__ = "MakerGear Setup"
+__plugin_pythoncompat__ = ">=2.7,<4"
 
 __plugin_implementation__ = MGSetupPlugin()
 
