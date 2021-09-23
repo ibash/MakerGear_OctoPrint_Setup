@@ -16,9 +16,17 @@ or manually using this URL:
 
 ## Development
 
+Setup:
+
 ```bash
 python3 -m venv venv
 source venv/bin/activate
 pip install -e .
 pip install -r requirements/dev.txt
+```
+
+Code formatting:
+
+```bash
+black .
 ```
