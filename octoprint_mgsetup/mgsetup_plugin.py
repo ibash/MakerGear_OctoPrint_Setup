@@ -91,18 +91,18 @@ class MGSetupPlugin(
             "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         )
         handler = logging.handlers.TimedRotatingFileHandler(
-            self._basefolder + "/logs/mgsetup.log", when="d", interval=3, backup_count=10
+            self._basefolder + "/logs/mgsetup.log", when="d", interval=3, backupCount=10
         )
         first_run_handler = logging.handlers.RotatingFileHandler(
             self._basefolder + "/logs/mgsetupFirstRun.log",
-            max_bytes=100000000,
-            backup_count=20,
+            maxBytes=100000000,
+            backupCount=20,
         )
         # first_run_handler.setLevel(5)
         permanent_handler = logging.handlers.RotatingFileHandler(
             self._basefolder + "/logs/mgsetupPermanent.log",
-            max_bytes=100000000,
-            backup_count=20,
+            maxBytes=100000000,
+            backupCount=20,
         )
         # permanent_handler.setLevel(5)
         handler.setFormatter(formatter)
