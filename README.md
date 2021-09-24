@@ -25,6 +25,18 @@ pip install -e .
 pip install -r requirements/dev.txt
 ```
 
+Setup in docker for development:
+```bash
+# start octoprint in one terminal
+docker-compose up
+
+# in the other install the plugin in dev mode
+docker exec -it makergear_octoprint_setup_octoprint_1 bash
+octoprint dev plugin:install
+cd /MakerGear_OctoPrint_Setup/
+python setup.py develop
+```
+
 Code formatting:
 
 ```bash
