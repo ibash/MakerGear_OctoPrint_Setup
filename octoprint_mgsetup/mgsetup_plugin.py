@@ -23,6 +23,7 @@ import traceback
 import urllib.request, urllib.error, urllib.parse
 import yaml
 
+
 class MGSetupPlugin(
     octoprint.plugin.StartupPlugin,
     octoprint.plugin.TemplatePlugin,
@@ -318,71 +319,22 @@ class MGSetupPlugin(
         )
         # self._logger.info(__version__)
 
-        subprocess.call(
-            "/home/pi/.octoprint/scripts/hosts.sh"
-        )  # recreate hostsname.js for external devices/ print finder
-
         try:  # a bunch of code with minor error checking and user alert...ion to copy scripts to the right location; should only ever need to be run once
-            os.makedirs("/home/pi/.octoprint/scripts/gcode")
+            os.makedirs(self.script_path("gcode"))
         except OSError:
-            if not os.path.isdir("/home/pi/.octoprint/scripts/gcode"):
+            if not os.path.isdir(self.script_path("gcode")):
                 raise
 
-        src_files = os.listdir(self._basefolder + "/static/maintenance/gcode")
-        src = self._basefolder + "/static/maintenance/gcode"
-        dest = "/home/pi/.octoprint/scripts/gcode"
-        for file_name in src_files:
-            full_src_name = os.path.join(src, file_name)
-            full_dest_name = os.path.join(dest, file_name)
-            if not (os.path.isfile(full_dest_name)):
-                shutil.copy(full_src_name, dest)
-                self._logger.info("Had to copy " + file_name + " to scripts folder.")
-            else:
-                if (hashlib.md5(open(full_src_name).read()).hexdigest()) != (
-                    hashlib.md5(open(full_dest_name).read()).hexdigest()
-                ):
-                    shutil.copy(full_src_name, dest)
-                    self._logger.info(
-                        "Had to overwrite " + file_name + " with new version."
-                    )
+        self.copy_maintenance_files("gcode", "scripts/gcode")
+        self.copy_maintenance_files("cura", "slicingProfiles/cura")
+        self.copy_maintenance_files("scripts", "scripts")
 
-        src_files = os.listdir(self._basefolder + "/static/maintenance/scripts/")
-        src = self._basefolder + "/static/maintenance/scripts/"
-        dest = "/home/pi/.octoprint/scripts/"
-        for file_name in src_files:
-            full_src_name = os.path.join(src, file_name)
-            full_dest_name = os.path.join(dest, file_name)
-            if not (os.path.isfile(full_dest_name)):
-                shutil.copy(full_src_name, dest)
-                self._logger.info("Had to copy " + file_name + " to scripts folder.")
-            else:
-                if (hashlib.md5(open(full_src_name).read()).hexdigest()) != (
-                    hashlib.md5(open(full_dest_name).read()).hexdigest()
-                ):
-                    shutil.copy(full_src_name, dest)
-                    self._logger.info(
-                        "Had to overwrite " + file_name + " with new version."
-                    )
-            if ".sh" in file_name:
-                os.chmod(full_dest_name, 0o755)
+        # set file permissions
+        scripts_dir = self._settings.getBaseFolder("scripts")
+        for file in os.listdir(scripts_dir):
+            if ".sh" in file:
+                os.chmod(os.path.join(scripts_dir, file), 0o755)
 
-        src_files = os.listdir(self._basefolder + "/static/maintenance/cura/")
-        src = self._basefolder + "/static/maintenance/cura/"
-        dest = "/home/pi/.octoprint/slicingProfiles/cura/"
-        for file_name in src_files:
-            full_src_name = os.path.join(src, file_name)
-            full_dest_name = os.path.join(dest, file_name)
-            if not (os.path.isfile(full_dest_name)):
-                shutil.copy(full_src_name, dest)
-                self._logger.info("Had to copy " + file_name + " to scripts folder.")
-            else:
-                if (hashlib.md5(open(full_src_name).read()).hexdigest()) != (
-                    hashlib.md5(open(full_dest_name).read()).hexdigest()
-                ):
-                    shutil.copy(full_src_name, dest)
-                    self._logger.info(
-                        "Had to overwrite " + file_name + " with new version."
-                    )
         try:
             os.chmod(self._basefolder + "/static/js/hostname.js", 0o666)
         except OSError:
@@ -401,6 +353,10 @@ class MGSetupPlugin(
             self._logger.info("logpatch.sh doesn't exist?")
         except:
             raise
+
+        subprocess.call(
+            self.script_path("hosts.sh")
+        )  # recreate hostsname.js for external devices/ print finder
 
         try:
             self.ip = str(
@@ -443,8 +399,9 @@ class MGSetupPlugin(
                 "It looks like the machine crashed while printing - updating machineFail times and reseting.",
                 2,
             )
-            self.current_project_machine_fail_time = self.current_project_machine_fail_time + (
-                self.current_print_elapsed_time - self.current_print_start_time
+            self.current_project_machine_fail_time = (
+                self.current_project_machine_fail_time
+                + (self.current_print_elapsed_time - self.current_print_start_time)
             )
             self.total_machine_fail_time = self.total_machine_fail_time + (
                 self.current_print_elapsed_time - self.current_print_start_time
@@ -453,12 +410,15 @@ class MGSetupPlugin(
             self.current_print_start_time = 0
             self.current_print_elapsed_time = 0
             self._settings.set(
-                ["currentProjectMachineFailTime"], self.current_project_machine_fail_time
+                ["currentProjectMachineFailTime"],
+                self.current_project_machine_fail_time,
             )
             self._settings.set(
                 ["currentProjectMachineFailTimeFriendly"],
                 str(
-                    datetime.timedelta(seconds=int(self.current_project_machine_fail_time))
+                    datetime.timedelta(
+                        seconds=int(self.current_project_machine_fail_time)
+                    )
                 ),
             )
 
@@ -486,7 +446,9 @@ class MGSetupPlugin(
                 self.mg_log("smb.conf hash matches patched file, no need to patch", 2)
             elif smb_hash_val == "95b44915e267400669b2724e0cce5967":
                 self.smbpatchstring = "Patch was required: smb.conf has been patched"
-                self.mg_log("smb.conf hash matches unpatched file, now patching file", 2)
+                self.mg_log(
+                    "smb.conf hash matches unpatched file, now patching file", 2
+                )
                 # self.mg_log("smb.conf actual hash: "+str(smb_hash_val))
                 self.patch_smb()
 
@@ -657,11 +619,13 @@ class MGSetupPlugin(
             if (self.current_print_start_time != 0) and (
                 current_time > self.current_print_start_time
             ):
-                self.current_project_print_fail_time = self.current_project_print_fail_time + (
-                    current_time - self.current_print_start_time
+                self.current_project_print_fail_time = (
+                    self.current_project_print_fail_time
+                    + (current_time - self.current_print_start_time)
                 )
                 self._settings.set(
-                    ["currentProjectPrintFailTime"], self.current_project_print_fail_time
+                    ["currentProjectPrintFailTime"],
+                    self.current_project_print_fail_time,
                 )
                 self._settings.set(
                     ["currentProjectPrintFailTimeFriendly"],
@@ -700,19 +664,24 @@ class MGSetupPlugin(
             self.current_project_print_success_time = (
                 self.current_project_print_success_time + payload["time"]
             )
-            self.total_print_success_time = self.total_print_success_time + payload["time"]
+            self.total_print_success_time = (
+                self.total_print_success_time + payload["time"]
+            )
             self._settings.set(["totalPrintSuccessTime"], self.total_print_success_time)
             self._settings.set(
                 ["totalPrintSuccessTimeFriendly"],
                 str(datetime.timedelta(seconds=int(self.total_print_success_time))),
             )
             self._settings.set(
-                ["currentProjectPrintSuccessTime"], self.current_project_print_success_time
+                ["currentProjectPrintSuccessTime"],
+                self.current_project_print_success_time,
             )
             self._settings.set(
                 ["currentProjectPrintSuccessTimeFriendly"],
                 str(
-                    datetime.timedelta(seconds=int(self.current_project_print_success_time))
+                    datetime.timedelta(
+                        seconds=int(self.current_project_print_success_time)
+                    )
                 ),
             )
 
@@ -889,17 +858,20 @@ class MGSetupPlugin(
         return p.returncode, all_stdout, all_stderr
 
     def counter_test(self, action_maybe):
-        self._execute("/home/pi/.octoprint/scripts/counter.sh")
-        # p = subprocess.call("/home/pi/.octoprint/scripts/counter.sh", shell=True)
+        self._execute(self.script_path("counter.sh"))
+        # p = subprocess.call(self.script_path("counter.sh"), shell=True)
         # while p.poll():
         # 	self._logger.info(p.readline())
 
     def back_up_config_yaml(self):
+        config_file = self._settings._configfile
+        backup_file = self._settings._configfile + ".backup"
+
         try:
-            if not os.path.isfile("/home/pi/.octoprint/config.yaml.backup"):
+            if not os.path.isfile(backup_file):
                 shutil.copyfile(
-                    "/home/pi/.octoprint/config.yaml",
-                    "/home/pi/.octoprint/config.yaml.backup",
+                    config_file,
+                    backup_file,
                 )
                 self._plugin_manager.send_plugin_message(
                     "mgsetup",
@@ -908,12 +880,12 @@ class MGSetupPlugin(
             else:
                 new_backup = str(datetime.datetime.now().strftime("%y-%m-%d.%H:%M"))
                 shutil.copyfile(
-                    "/home/pi/.octoprint/config.yaml.backup",
-                    "/home/pi/.octoprint/config.yaml.backup." + new_backup,
+                    backup_file,
+                    backup_file + "." + new_backup,
                 )
                 shutil.copyfile(
-                    "/home/pi/.octoprint/config.yaml",
-                    "/home/pi/.octoprint/config.yaml.backup",
+                    config_file,
+                    backup_file,
                 )
                 self._plugin_manager.send_plugin_message(
                     "mgsetup",
@@ -934,12 +906,12 @@ class MGSetupPlugin(
                     + "\n"
                 ),
             )
-            if not os.path.isfile("/home/pi/.octoprint/config.yaml.backup"):
+            if not os.path.isfile(backup_file):
                 raise
             else:
-                self._execute("sudo chgrp pi /home/pi/.octoprint/config.yaml.backup")
-                self._execute("sudo chown pi /home/pi/.octoprint/config.yaml.backup")
-                os.chmod("/home/pi/.octoprint/config.yaml.backup", 0o600)
+                self._execute("sudo chgrp pi " + backup_file)
+                self._execute("sudo chown pi " + backup_file)
+                os.chmod(backup_file, 0o600)
                 self._plugin_manager.send_plugin_message(
                     "mgsetup",
                     dict(
@@ -1137,7 +1109,9 @@ class MGSetupPlugin(
                 with open(
                     "/home/pi/m3firmware/src/Marlin/Configuration_makergear.h", "r+"
                 ) as f:
-                    time_string = str(datetime.datetime.now().strftime("%y-%m-%d.%H:%M"))
+                    time_string = str(
+                        datetime.datetime.now().strftime("%y-%m-%d.%H:%M")
+                    )
                     old_config = f.read()
                     f.seek(0, 0)
                     if f.readline() == "\n":
@@ -1189,8 +1163,7 @@ class MGSetupPlugin(
 
     def write_netconnectd_password(self, new_password):
         subprocess.call(
-            "/home/pi/.octoprint/scripts/changeNetconnectdPassword.sh "
-            + new_password["password"],
+            self.script_path("changeNetconnectdPassword.sh") + new_password["password"],
             shell=True,
         )
         self._logger.info(
@@ -1199,7 +1172,7 @@ class MGSetupPlugin(
 
     def change_hostname(self, new_hostname):
         subprocess.call(
-            "/home/pi/.octoprint/scripts/changeHostname.sh "
+            self.script_path("changeHostname.sh")
             + new_hostname["hostname"]
             + " "
             + self.newhost,
@@ -1475,24 +1448,26 @@ class MGSetupPlugin(
         self._logger.info("adminAction called: " + str(action))
         if action["action"] == "turnSshOn":
             # self.turn_ssh_on()
-            self._execute("/home/pi/.octoprint/scripts/startSsh.sh")
+            self._execute(self.script_path("startSsh.sh"))
             self._logger.info("SSH service started!")
             self.admin_action(dict(action="ssh_state"))
         elif action["action"] == "turnSshOff":
             # self.turn_ssh_off()
-            self._execute("/home/pi/.octoprint/scripts/stopSsh.sh")
+            self._execute(self.script_path("stopSsh.sh"))
             self._logger.info("SSH service stopped!")
             self.admin_action(dict(action="ssh_state"))
         elif action["action"] == "resetWifi":
-            # subprocess.call("/home/pi/.octoprint/scripts/resetWifi.sh")
-            self._execute("/home/pi/.octoprint/scripts/resetWifi.sh")
+            # subprocess.call(self.script_path("resetWifi.sh"))
+            self._execute(self.script_path("resetWifi.sh"))
             self._logger.info("Wifi reset!")
         elif action["action"] == "uploadFirmware":
-            # subprocess.call("/home/pi/.octoprint/scripts/upload.sh")
+            # subprocess.call(self.script_path("upload.sh"))
 
             self._printer.cancel_print()
             self._printer.disconnect()
-            self.mg_log(self._execute("python /home/pi/.octoprint/scripts/upload.py"), 2)
+            self.mg_log(
+                self._execute("python /home/pi/.octoprint/scripts/upload.py"), 2
+            )
             self._printer.connect()
 
         elif action["action"] == "uploadAndFlashFirmware":
@@ -1501,14 +1476,16 @@ class MGSetupPlugin(
 
             self._printer.cancel_print()
             self._printer.disconnect()
-            self.mg_log(self._execute("python /home/pi/.octoprint/scripts/upload.py"), 2)
+            self.mg_log(
+                self._execute("python /home/pi/.octoprint/scripts/upload.py"), 2
+            )
             self._printer.connect()
 
         elif action["action"] == "counterTest":
             self.counter_test(action)
         elif action["action"] == "expandFilesystem":
-            # subprocess.call("/home/pi/.octoprint/scripts/expandFilesystem.sh", shell=True)
-            self._execute("/home/pi/.octoprint/scripts/expandFilesystem.sh")
+            # subprocess.call(self.script_path("expandFilesystem.sh"), shell=True)
+            self._execute(self.script_path("expandFilesystem.sh"))
             self._logger.info("Filesystem expanded - will reboot now.")
         elif action["action"] == "resetRegistration":
             self._logger.info("Registration reset!")
@@ -1643,13 +1620,15 @@ class MGSetupPlugin(
             self.current_project_print_fail_time = 0
             self.current_project_machine_fail_time = 0
             self._settings.set(
-                ["currentProjectPrintSuccessTime"], self.current_project_print_success_time
+                ["currentProjectPrintSuccessTime"],
+                self.current_project_print_success_time,
             )
             self._settings.set(
                 ["currentProjectPrintFailTime"], self.current_project_print_fail_time
             )
             self._settings.set(
-                ["currentProjectMachineFailTime"], self.current_project_machine_fail_time
+                ["currentProjectMachineFailTime"],
+                self.current_project_machine_fail_time,
             )
             self._settings.set(["currentProjectName"], self.current_project_name)
 
@@ -1748,12 +1727,16 @@ class MGSetupPlugin(
                 )
                 self._logger.info("printerUpgrade debug position 5.")
 
-                new_profile_string = (re.sub("[^\w]", "_", new_profile["model"])).upper()
+                new_profile_string = (
+                    re.sub("[^\w]", "_", new_profile["model"])
+                ).upper()
 
                 with open(
                     "/home/pi/m3firmware/src/Marlin/Configuration_makergear.h", "r+"
                 ) as f:
-                    time_string = str(datetime.datetime.now().strftime("%y-%m-%d.%H:%M"))
+                    time_string = str(
+                        datetime.datetime.now().strftime("%y-%m-%d.%H:%M")
+                    )
                     old_config = f.read()
                     f.seek(0, 0)
                     if f.readline() == "\n":
@@ -1830,12 +1813,12 @@ class MGSetupPlugin(
             self._logger.info("printerUpgrade debug position 8.")
 
     def turn_ssh_on(self):
-        subprocess.call("/home/pi/.octoprint/scripts/startSsh.sh")
+        subprocess.call(self.script_path("startSsh.sh"))
         self._logger.info("SSH service started!")
         self.admin_action(dict(action="sshState"))
 
     def turn_ssh_off(self):
-        subprocess.call("/home/pi/.octoprint/scripts/stopSsh.sh")
+        subprocess.call(self.script_path("stopSsh.sh"))
         self._logger.info("SSH service stopped!")
         self.admin_action(dict(action="sshState"))
 
@@ -1855,8 +1838,7 @@ class MGSetupPlugin(
         elif command == "writeNetconnectdPassword":
             # self.write_netconnectd_password(data)
             self._execute(
-                "/home/pi/.octoprint/scripts/changeNetconnectdPassword.sh "
-                + data["password"]
+                self.script_path("changeNetconnectdPassword.sh") + data["password"]
             )
             self._logger.info(
                 "Netconnectd password changed to " + data["password"] + " !"
@@ -1864,7 +1846,7 @@ class MGSetupPlugin(
         elif command == "changeHostname":
             # self.change_hostname(data)
             self._execute(
-                "/home/pi/.octoprint/scripts/changeHostname.sh "
+                self.script_path("changeHostname.sh")
                 + data["hostname"]
                 + " "
                 + self.newhost
@@ -1981,18 +1963,31 @@ class MGSetupPlugin(
             )
         ]
 
+    def copy_maintenance_files(self, src, dest):
+        src_dir = os.path.join(self._basefolder, "static/maintenance", src)
+        src_files = os.listdir(src_dir)
+        dest_dir = os.path.join(self._settings.getBaseFolder("base"), dest)
 
-# __plugin_settings_overlay__ = {appearance: {components: {order: {tab: {'- plugin_mgsetup'}}}}}
-# __plugin_settings_overlay__ = dict(appearance=dict(components=dict(order=dict(tab=[MGSetupPlugin().first_tab_name]))))
-# __plugin_settings_overlay__ = dict(server=dict(port=5001))
+        # src_files = os.listdir(self._basefolder + "/static/maintenance/gcode")
+        # src = self._basefolder + "/static/maintenance/gcode"
+        # dest = self.script_path("gcode")
+        for file_name in src_files:
+            full_src_name = os.path.join(src_dir, file_name)
+            full_dest_name = os.path.join(dest_dir, file_name)
+            if not (os.path.isfile(full_dest_name)):
+                shutil.copy(full_src_name, dest_dir)
+                self._logger.info("Had to copy " + file_name + " to scripts folder.")
+            else:
+                if (
+                    hashlib.md5(open(full_src_name).read().encode("utf-8")).hexdigest()
+                ) != (
+                    hashlib.md5(open(full_dest_name).read().encode("utf-8")).hexdigest()
+                ):
+                    shutil.copy(full_src_name, dest_dir)
+                    self._logger.info(
+                        "Had to overwrite " + file_name + " with new version."
+                    )
 
-__plugin_name__ = "MakerGear Setup"
-__plugin_pythoncompat__ = ">=2.7,<4"
-
-__plugin_implementation__ = MGSetupPlugin()
-
-__plugin_hooks__ = {
-    "octoprint.comm.protocol.gcode.received": __plugin_implementation__.process_z_offset,
-    "octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information,
-    "octoprint.server.http.routes": __plugin_implementation__.route_hook,
-}
+    def script_path(self, file):
+        base = self._settings.getBaseFolder("scripts")
+        return os.path.join(base, file)
